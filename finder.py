@@ -1,74 +1,57 @@
 # Importing Libraries
-import os
-import sys
-from pathlib import Path
 import hashlib
-  
-  
-def FindDuplicate(SupFolder):
-    
-    # Duplic is in format {hash:[names]}
-    Duplic = {}
-    for file_name in files:
-        
-        # Path to the file
-        path = os.path.join(folders, file_name)
-          
-        # Calculate hash
-        file_hash = Hash_File(path)
-          
-        # Add or append the file path to Duplic
-        if file_hash in Duplic:
-            Duplic[file_hash].append(file_name)
-        else:
-            Duplic[file_hash] = [file_name]
-    return Duplic
-  
-# Joins dictionaries
-def Join_Dictionary(dict_1, dict_2):
-    for key in dict_2.keys():
-        
-        # Checks for existing key
-        if key in dict_1:
-            
-            # If present Append
-            dict_1[key] = dict_1[key] + dict_2[key]
-        else:
-            
-            # Otherwise Stores
-            dict_1[key] = dict_2[key]
+import json
+import os
+import argparse
   
 # Calculates MD5 hash of file
 # Returns HEX digest of file
-def Hash_File(path):
+def get_hash(filename):
+    h  = hashlib.md5()
+    b  = bytearray(128*1024)
+    mv = memoryview(b)
+    with open(filename, 'rb', buffering=0) as f:
+        while n := f.readinto(mv):
+            h.update(mv[:n])
+    return h.hexdigest()
+
+def search_path(filepath):
+    print(f"Searching: {filepath}")
+    if any(os.scandir(filepath)):
+        for item in os.scandir(filepath):
+            if item.is_dir():
+                # if the element is a directory, call function recursively
+                search_path(item.path)
+            else:
+                # Iterate over any files
+                print(f"Checking: {item.name}")
+                # Generate a hash per file
+                filehash = get_hash(item.path)
+                if filehash in duplicates:
+                    duplicates[filehash].append(item.path)
+                else:
+                    duplicates[filehash]=[]
+    elif args.delete:
+        print(f"Removing empty directory: {filepath}")
+        os.rmdir(filepath)
     
-    # Opening file in afile
-    afile = open(path, 'rb')
-    hasher = hashlib.md5()
-    blocksize=65536
-    buf = afile.read(blocksize)
-      
-    while len(buf) > 0:
-        hasher.update(buf)
-        buf = afile.read(blocksize)
-    afile.close()
-    return hasher.hexdigest()
+def check_duplicates():
+    for key in duplicates:
+        if duplicates[key] == []:
+            duplicates.pop(key)
+
+    with open('duplicates.json', 'w') as convert_file:
+        convert_file.write(json.dumps(duplicates))
+
+def main():
+    search_path(args.filepath)
+    check_duplicates()
+
+if __name__ == "__main__":
   
-Duplic = {}
-folders = Path('path/to/directory')
-files = sorted(os.listdir(folders))
-for i in files:
-    
-    # Iterate over the files
-    # Find the duplicated files
-    # Append them to the Duplic
-    Join_Dictionary(Duplic, FindDuplicate(i))
-      
-# Results store a list of Duplic values
-results = list(filter(lambda x: len(x) > 1, Duplic.values()))
-if len(results) > 0:
-    for result in results:
-        for sub_result in result:
-            print('\t\t%s' % sub_result)
-else:
-    print('No duplicates found.')
+    duplicates = {}
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filepath", required=True)
+    parser.add_argument('-d', '--delete', action='store_true', help="Remove empty directories")
+    args = parser.parse_args()
+    main()
