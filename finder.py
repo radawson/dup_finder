@@ -1,9 +1,9 @@
-# Importing Libraries
+import argparse
 import hashlib
 import json
 import os
-import argparse
-  
+import shutil
+
 # Calculates MD5 hash of file
 # Returns HEX digest of file
 def get_hash(filename):
@@ -25,12 +25,21 @@ def search_path(filepath):
             else:
                 # Iterate over any files
                 print(f"Checking: {item.name}")
-                # Generate a hash per file
-                filehash = get_hash(item.path)
-                if filehash in duplicates:
-                    duplicates[filehash].append(item.path)
+                # Remove DS_Store files left behind by macOS
+                if item.name == ".DS_Store":
+                    print("Removing .DS_Store")
+                    os.remove(item.path)
                 else:
-                    duplicates[filehash]=[]
+                    # Generate a hash per file
+                    filehash = get_hash(item.path)
+                    if filehash in duplicates:
+                        duplicates[filehash].append(item.path)
+                    else:
+                        duplicates[filehash]=[]
+                    if args.move:
+                        if filepath != args.filepath:
+                            print(f"Moving {item.name} to {args.filepath}")
+                            shutil.move(item, f"{args.filepath}/{item.name}")
     elif args.delete:
         print(f"Removing empty directory: {filepath}")
         os.rmdir(filepath)
@@ -43,15 +52,17 @@ def check_duplicates():
     with open('duplicates.json', 'w') as convert_file:
         convert_file.write(json.dumps(duplicates))
 
-def main():
-    search_path(args.filepath)
+def main(filepath):
+    search_path(filepath)
     check_duplicates()
 
 if __name__ == "__main__":
   
     duplicates = {}
+    # Handle command line input here
     parser = argparse.ArgumentParser()
-    parser.add_argument("filepath", required=True)
+    parser.add_argument("filepath")
     parser.add_argument('-d', '--delete', action='store_true', help="Remove empty directories")
+    parser.add_argument('-m', '--move', action='store_true', help="move all files to this directory")
     args = parser.parse_args()
-    main()
+    main(args.filepath)
