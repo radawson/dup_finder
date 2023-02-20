@@ -15,6 +15,15 @@ def get_hash(filename):
             h.update(mv[:n])
     return h.hexdigest()
 
+def move_file(item, count=1):
+    while True:
+        try:
+            shutil.move(item, f"{args.filepath}/{item.name}")
+        except FileExistsError:
+            move_file(item, count+1)
+        else:
+            break
+
 def search_path(filepath):
     print(f"Searching: {filepath}")
     if any(os.scandir(filepath)):
@@ -39,7 +48,8 @@ def search_path(filepath):
                     if args.move:
                         if filepath != args.filepath:
                             print(f"Moving {item.name} to {args.filepath}")
-                            shutil.move(item, f"{args.filepath}/{item.name}")
+                            move_file(item)
+                                
     elif args.delete:
         print(f"Removing empty directory: {filepath}")
         os.rmdir(filepath)
