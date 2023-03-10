@@ -10,11 +10,17 @@ def main(filepath):
         
     # Windows ➡ Unix
     if args.linux:
+        print("Converting to Linux line endings")
         content = content.replace(WINDOWS_LINE_ENDING, UNIX_LINE_ENDING)
 
     # Unix ➡ Windows
-    if args.windows:
+    elif args.windows:
+        print("Converting to Windows line endings")
         content = content.replace(UNIX_LINE_ENDING, WINDOWS_LINE_ENDING)
+    
+    else:
+        print("No conversion method specified")
+        exit(1)
 
     with open(filepath, 'wb') as open_file:
         open_file.write(content)
