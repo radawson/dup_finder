@@ -1,4 +1,5 @@
 import argparse
+import ffmpeg
 import hashlib
 import json
 import os
@@ -62,6 +63,10 @@ def check_duplicates():
     with open('duplicates.json', 'w') as convert_file:
         convert_file.write(json.dumps(duplicates))
 
+def convert_avi_to_mp4(avi_file_path, output_name):
+    os.popen("ffmpeg -i '{input}' -ac 2 -b:v 2000k -c:a aac -c:v libx264 -b:a 160k -vprofile high -bf 0 -strict experimental -f mp4 '{output}.mp4'".format(input = avi_file_path, output = output_name))
+    return True
+
 def main(filepath):
     search_path(filepath)
     check_duplicates()
@@ -72,6 +77,7 @@ if __name__ == "__main__":
     # Handle command line input here
     parser = argparse.ArgumentParser()
     parser.add_argument("filepath")
+    parser.add_argument('-c', '--convert', choices=['mp4', 'mkv'], help="Convert movie files from .avi")
     parser.add_argument('-d', '--delete', action='store_true', help="Remove empty directories")
     parser.add_argument('-m', '--move', action='store_true', help="move all files to this directory")
     args = parser.parse_args()
