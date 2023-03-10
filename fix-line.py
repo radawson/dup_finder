@@ -27,7 +27,6 @@ def main(filepath):
 
 if __name__ == "__main__":
   
-    duplicates = {}
     # Handle command line input here
     parser = argparse.ArgumentParser()
     parser.add_argument("filepath")
